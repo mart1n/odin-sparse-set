@@ -3,6 +3,8 @@ package sparse_set
 import "core:fmt"
 import "core:mem"
 import "core:runtime"
+import "core:hash"
+import "core:slice"
 
 Sparse_Set :: struct($T: typeid) {
 	sparse:   []int,
@@ -29,9 +31,9 @@ destroy_sparse_set :: proc(set: ^Sparse_Set($T)) {
 }
 
 hash_value :: proc(value: $T) -> u64 {
-    data :=   value
-
-	data := ([^]u8)raw_data(value))
+    value := value
+    //data := cast([^]u8)(&value)
+    data := [^]u8(&value)
 	size := size_of(T)
 	hash: u64 = 14695981039346656037 // FNV-1a offset basis
 	for i in 0 ..< size {
@@ -42,7 +44,12 @@ hash_value :: proc(value: $T) -> u64 {
 }
 
 hash_index :: proc(value: $T, capacity: int) -> int {
-	h := hash_value(value)
+    value := value
+    //data := [^]u8(&value)
+    d_ptr := cast([^]u8)(&value)
+    sdata := slice.from_ptr(d_ptr, size_of(T))
+	//h := hash_value(value)
+    h := hash.fnv64a(sdata)
 	return int(h % u64(capacity))
 }
 

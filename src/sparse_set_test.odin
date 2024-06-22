@@ -1,4 +1,3 @@
-//+private file
 package sparse_set
 
 import "core:fmt"
@@ -60,13 +59,13 @@ test_resize :: proc(t: ^testing.T) {
 	set := create_sparse_set(Pos, 4)
 	defer destroy_sparse_set(&set)
 
-	for i in 1.0 ..= 10.0 {
-		insert(&set, Pos{i, i})
+	for i in 1 ..= 10 {
+		insert(&set, Pos{f64(i), f64(i)})
 	}
 	testing.expect(t, set.capacity > 4, "Capacity should have increased")
 	testing.expect(t, size(&set) == 10, "All elements should be present")
-	for i in 1.0 ..= 10.0 {
-		testing.expect(t, contains(&set, Pos{i, i}), fmt.tprintf("Set should contain %d", i))
+	for i in 1 ..= 10 {
+		testing.expect(t, contains(&set, Pos{f64(i), f64(i)}), fmt.tprintf("Set should contain %d", Pos{f64(i), f64(i)}))
 	}
 }
 
@@ -75,17 +74,38 @@ test_iterate :: proc(t: ^testing.T) {
 	set := create_sparse_set(Pos, 10)
 	defer destroy_sparse_set(&set)
 
-	for i in 1.0 ..= 5.0 {
-		insert(&set, Pos{i, i})
+	for i in 1 ..= 5 {
+		insert(&set, Pos{f64(i), f64(i)})
 	}
 
 	elements := iterate(&set)
 	testing.expect(t, len(elements) == 5, "Iteration should return 5 elements")
 	for element in elements {
+        fmt.println("Iterate: ", element)
 		testing.expect(
 			t,
 			contains(&set, element),
 			fmt.tprintf("Iterated element %d should be in set", element),
 		)
 	}
+}
+
+@(test)
+test_hash :: proc(t: ^testing.T) {
+    r1 := make([]int, 10)
+    r2 := make([]int, 10)
+
+    for i in 0 ..= 9 {
+        p := Pos{f64(i), f64(i)}
+        r1[i] = hash_index(p, 10)
+    }
+
+    for i in 0 ..= 9 {
+        p := Pos{f64(i), f64(i)}
+        r2[i] = hash_index(p, 10)
+    }
+
+    for i in 0 ..= 9 {
+		testing.expect(t, r1[i] == r2[i], fmt.tprintf("hash values should be equal %d vs %d", r1[i], r2[i]))
+    }
 }
