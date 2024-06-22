@@ -1,2 +1,2 @@
 # odin-sparse-set
-A basic Sparse Set in Odin
+A basic sparse set in Odin
