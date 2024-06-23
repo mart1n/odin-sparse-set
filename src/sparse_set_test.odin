@@ -11,7 +11,7 @@ Pos :: distinct struct {
 
 @(test)
 test_create_and_destroy :: proc(t: ^testing.T) {
-	set := create_sparse_set(Pos, 10)
+	set := create_sparse_set(Pos, 50)
 	testing.expect(t, set.capacity == 10, "Initial capacity should be 10")
 	testing.expect(t, size(&set) == 0, "Initial size should be 0")
 	destroy_sparse_set(&set)
@@ -20,7 +20,7 @@ test_create_and_destroy :: proc(t: ^testing.T) {
 
 @(test)
 test_insert_and_contains :: proc(t: ^testing.T) {
-	set := create_sparse_set(Pos, 10)
+	set := create_sparse_set(Pos, 50)
 	defer destroy_sparse_set(&set)
 
 	testing.expect(t, insert(&set, Pos{10, 10}), "Should be able to insert 5")
@@ -31,7 +31,7 @@ test_insert_and_contains :: proc(t: ^testing.T) {
 
 @(test)
 test_remove :: proc(t: ^testing.T) {
-	set := create_sparse_set(Pos, 10)
+	set := create_sparse_set(Pos, 50)
 	defer destroy_sparse_set(&set)
 
 	insert(&set, Pos{1, 1})
@@ -44,7 +44,7 @@ test_remove :: proc(t: ^testing.T) {
 
 @(test)
 test_clear :: proc(t: ^testing.T) {
-	set := create_sparse_set(Pos, 10)
+	set := create_sparse_set(Pos, 50)
 	defer destroy_sparse_set(&set)
 
 	insert(&set, Pos{1, 1})
@@ -56,7 +56,7 @@ test_clear :: proc(t: ^testing.T) {
 
 @(test)
 test_resize :: proc(t: ^testing.T) {
-	set := create_sparse_set(Pos, 4)
+	set := create_sparse_set(Pos, 5)
 	defer destroy_sparse_set(&set)
 
 	for i in 1 ..= 10 {
@@ -65,13 +65,17 @@ test_resize :: proc(t: ^testing.T) {
 	testing.expect(t, set.capacity > 4, "Capacity should have increased")
 	testing.expect(t, size(&set) == 10, "All elements should be present")
 	for i in 1 ..= 10 {
-		testing.expect(t, contains(&set, Pos{f64(i), f64(i)}), fmt.tprintf("Set should contain %d", Pos{f64(i), f64(i)}))
+		testing.expect(
+			t,
+			contains(&set, Pos{f64(i), f64(i)}),
+			fmt.tprintf("Set should contain %d", Pos{f64(i), f64(i)}),
+		)
 	}
 }
 
 @(test)
 test_iterate :: proc(t: ^testing.T) {
-	set := create_sparse_set(Pos, 10)
+	set := create_sparse_set(Pos, 50)
 	defer destroy_sparse_set(&set)
 
 	for i in 1 ..= 5 {
@@ -81,7 +85,7 @@ test_iterate :: proc(t: ^testing.T) {
 	elements := iterate(&set)
 	testing.expect(t, len(elements) == 5, "Iteration should return 5 elements")
 	for element in elements {
-        fmt.println("Iterate: ", element)
+		fmt.println("Iterate: ", element)
 		testing.expect(
 			t,
 			contains(&set, element),
@@ -92,20 +96,28 @@ test_iterate :: proc(t: ^testing.T) {
 
 @(test)
 test_hash :: proc(t: ^testing.T) {
-    r1 := make([]int, 10)
-    r2 := make([]int, 10)
+	r1 := make([]int, 10)
+	r2 := make([]int, 10)
 
-    for i in 0 ..= 9 {
-        p := Pos{f64(i), f64(i)}
-        r1[i] = hash_index(p, 10)
-    }
+	for i in 0 ..= 9 {
+		p := Pos{f64(i), f64(i)}
+		h := hash_index(p, 50)
+		r1[i] = h
+		fmt.printf("Hash Debug, value: %v, hash: %d\n", p, h)
+	}
 
-    for i in 0 ..= 9 {
-        p := Pos{f64(i), f64(i)}
-        r2[i] = hash_index(p, 10)
-    }
+	for i in 0 ..= 9 {
+		p := Pos{f64(i), f64(i)}
+		h := hash_index(p, 50)
+		r2[i] = h
+		fmt.printf("Hash Debug, value: %v, hash: %d\n", p, h)
+	}
 
-    for i in 0 ..= 9 {
-		testing.expect(t, r1[i] == r2[i], fmt.tprintf("hash values should be equal %d vs %d", r1[i], r2[i]))
-    }
+	for i in 0 ..= 9 {
+		testing.expect(
+			t,
+			r1[i] == r2[i],
+			fmt.tprintf("hash values should be equal %d vs %d", r1[i], r2[i]),
+		)
+	}
 }

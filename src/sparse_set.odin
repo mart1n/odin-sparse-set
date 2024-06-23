@@ -1,9 +1,9 @@
 package sparse_set
 
 import "core:fmt"
+import "core:hash"
 import "core:mem"
 import "core:runtime"
-import "core:hash"
 import "core:slice"
 
 Sparse_Set :: struct($T: typeid) {
@@ -31,12 +31,14 @@ destroy_sparse_set :: proc(set: ^Sparse_Set($T)) {
 }
 
 hash_value :: proc(value: $T) -> u64 {
-    value := value
-    //data := cast([^]u8)(&value)
-    data := [^]u8(&value)
+	value := value
+	data := cast([^]u8)(&value)
+	//data := [^]u8(&value)
 	size := size_of(T)
 	hash: u64 = 14695981039346656037 // FNV-1a offset basis
+	//fmt.printf("DEBUG HASH DATA FOR: %v\n", value)
 	for i in 0 ..< size {
+		//fmt.println(u64(data[i]))
 		hash ~= u64(data[i])
 		hash *= 1099511628211 // FNV-1a prime
 	}
@@ -44,16 +46,20 @@ hash_value :: proc(value: $T) -> u64 {
 }
 
 hash_index :: proc(value: $T, capacity: int) -> int {
-    value := value
-    //data := [^]u8(&value)
-    d_ptr := cast([^]u8)(&value)
-    sdata := slice.from_ptr(d_ptr, size_of(T))
+	value := value
+	//data := [^]u8(&value)
+	d_ptr := cast([^]u8)(&value)
+	sdata := slice.from_ptr(d_ptr, size_of(T))
+	//fmt.printf("Length of hash slice: %d\n", len(sdata))
 	//h := hash_value(value)
-    h := hash.fnv64a(sdata)
+	h := hash.fnv64a(sdata)
+	//h := hash.ginger16(sdata)
+	//return int(h)
 	return int(h % u64(capacity))
 }
 
 resize :: proc(set: ^Sparse_Set($T)) {
+	fmt.printf("Resize, old: %d, new: %d\n", set.capacity, set.capacity * 2)
 	new_capacity := set.capacity * 2
 	new_sparse := make([]int, new_capacity)
 	new_dense := make([]T, new_capacity)
@@ -63,6 +69,7 @@ resize :: proc(set: ^Sparse_Set($T)) {
 	for i in 0 ..< set.size {
 		value := new_dense[i]
 		index := hash_index(value, new_capacity)
+		fmt.printf("Resize hash, value: %v, hash: %d\n", value, index)
 		new_sparse[index] = i
 	}
 
@@ -79,6 +86,7 @@ insert :: proc(set: ^Sparse_Set($T), value: T) -> bool {
 	}
 
 	index := hash_index(value, set.capacity)
+	fmt.printf("Insert, value: %v, hash: %d\n", value, index)
 	if contains(set, value) {
 		return false
 	}
@@ -91,6 +99,7 @@ insert :: proc(set: ^Sparse_Set($T), value: T) -> bool {
 
 remove :: proc(set: ^Sparse_Set($T), value: T) -> bool {
 	index := hash_index(value, set.capacity)
+	fmt.printf("Remove, value: %v, hash: %d\n", value, index)
 	if !contains(set, value) {
 		return false
 	}
@@ -110,7 +119,21 @@ contains :: proc(set: ^Sparse_Set($T), value: T) -> bool {
 		return false
 	}
 	index := hash_index(value, set.capacity)
+	fmt.printf("Contains, value: %v, hash: %d\n", value, index)
 	dense_index := set.sparse[index]
+	//return dense_index < set.size && set.dense[dense_index] == value
+	if dense_index < set.size {
+		fmt.printf("Failed Contains, dense_index is larger or equal to set.size")
+	}
+
+	if set.dense[dense_index] != value {
+		fmt.printf(
+			"Failed Contains, values don't match. Set at index: %v vs value: %v\n",
+			set.dense[dense_index],
+			value,
+		)
+	}
+
 	return dense_index < set.size && set.dense[dense_index] == value
 }
 
