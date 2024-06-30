@@ -1,4 +1,4 @@
-package sset
+package sparse_set
 
 import "core:fmt"
 import "core:testing"
@@ -9,6 +9,7 @@ Pos :: distinct struct {
 	y: f64,
 }
 
+e0: Entity = 0
 e1: Entity = 1
 e2: Entity = 2
 e3: Entity = 3
@@ -27,6 +28,18 @@ test_debug :: proc(t: ^testing.T) {
 	insert(&set, e1, Pos{1, 1})
 	insert(&set, e2, Pos{101, 201})
 	pprint(&set)
+}
+
+@(test)
+test_create_and_get :: proc(t: ^testing.T) {
+	set := create(Pos, 20)
+	defer destroy(&set)
+	testing.expect(t, size(&set) == 0, "Initial size should be 0")
+	testing.expect(t, len(set.entities) == 0, "length should be 0 after destruction")
+
+	testing.expect(t, insert(&set, e1, Pos{10, 10}), "Should be able to insert")
+	v, _ := get(&set, e1)
+	testing.expect(t, v^ == Pos{10, 10}, "Insert value should match Get value")
 }
 
 @(test)
@@ -125,6 +138,11 @@ test_remove :: proc(t: ^testing.T) {
 	testing.expect(t, remove(&set, e1), "Should be able to remove e1")
 	testing.expect(t, !contains(&set, e1), "Set should not contain entity after remove")
 
+	// Brute force check
+	for e, idx in set.entities {
+		testing.expect(t, e != e1, "set.entities list should not contain entity after remove")
+	}
+
 	testing.expect(t, contains(&set, e2, Pos{2, 2}), "Set should still contain entity 2")
 	testing.expect(t, size(&set) == 3, "Size should be 1 after removal")
 
@@ -150,17 +168,17 @@ test_clear :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_resize_from_one :: proc(t: ^testing.T) {
+test_resize_from_zero :: proc(t: ^testing.T) {
 	set := create(Pos, 1)
 	defer destroy(&set)
 
-	for i in 0 ..= 9 {
+	for i in 0 ..= 10 {
 		e := Entity(i)
 		insert(&set, e, Pos{f64(i), f64(i)})
 	}
 	testing.expect(t, len(set.entities) > 4, "length should have increased")
-	testing.expect(t, size(&set) == 10, "All elements should be present")
-	for i in 0 ..= 9 {
+	testing.expect(t, size(&set) == 11, "All elements should be present")
+	for i in 0 ..= 10 {
 		e := Entity(i)
 		testing.expect(
 			t,
@@ -176,13 +194,13 @@ test_resize_from_100 :: proc(t: ^testing.T) {
 	set := create(Pos, 100)
 	defer destroy(&set)
 
-	for i in 0 ..= 99 {
+	for i in 1 ..= 100 {
 		e := Entity(i)
 		insert(&set, e, Pos{f64(i), f64(i)})
 	}
 	testing.expect(t, len(set.entities) > 98, "length should have increased")
 	testing.expect(t, size(&set) == 100, "All elements should be present")
-	for i in 0 ..= 99 {
+	for i in 1 ..= 100 {
 		e := Entity(i)
 		testing.expect(
 			t,
@@ -199,7 +217,7 @@ test_iterate :: proc(t: ^testing.T) {
 	defer destroy(&set)
 
 
-	for i in 0 ..= 4 {
+	for i in 1 ..= 5 {
 		e := Entity(i)
 		insert(&set, e, Pos{f64(i), f64(i)})
 	}
@@ -207,7 +225,7 @@ test_iterate :: proc(t: ^testing.T) {
 	elements := iterate(&set)
 	testing.expect(t, len(elements) == 5, "Iteration should return 5 elements")
 	for element, idx in elements {
-		e := Entity(idx)
+		e := Entity(idx + 1)
 		fmt.println("Iterate: ", element)
 		testing.expect(
 			t,
